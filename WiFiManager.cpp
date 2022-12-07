@@ -1779,9 +1779,11 @@ void WiFiManager::handleAbrirFechar() {
   digitalWrite(pinFechar,LOW);
   Serial.println("Comandar porta");
   if(statusPorta==0){
+
     digitalWrite(pinFechar,HIGH);
     statusPorta=1;
   }else{
+
     digitalWrite(pinAbrir,HIGH);
     statusPorta=0;
   }

@@ -11,7 +11,7 @@
 // Update these with values suitable for your network.
 
 
-const char* mqtt_server = "broker.mqtt-dashboard.com";
+const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -96,9 +96,9 @@ void setup() {
     //if you get here you have connected to the WiFi    
     Serial.println("connected...yeey :)");
   }
-  client.setServer(mqtt_server, 1883);
-//  client.setCallback(callback);
 
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(recebePacote);
 }
 
 void checkWiFi(){
@@ -143,18 +143,80 @@ String getParam(String name){
   return value;
 }
 
+
+void conectaMQTT() { 
+    if (!client.connected()) {
+        Serial.print("Conectando ao Broker MQTT: ");
+        Serial.println(mqtt_server);
+        if (client.connect("00BCI0212")) {//id
+            Serial.println("Conectado ao Broker com sucesso!");
+            client.subscribe("comandoPorta");
+        } 
+        else {
+ 
+
+        }
+    }
+}
+
+void recebePacote(char* topic, byte* payload, unsigned int length) 
+{
+  Serial.println("Mensagem recebida");
+    String msg;
+
+    //obtem a string do payload recebido
+    for(int i = 0; i < length; i++) 
+    {
+       char c = (char)payload[i];
+       msg += c;
+    }
+
+    Serial.println(msg);
+
+    digitalWrite(0, LOW);
+    digitalWrite(2, LOW);
+    if (msg == "0") {
+
+       digitalWrite(2, HIGH);
+       delay(2000);
+    }else if(msg=="1"){
+      digitalWrite(0, HIGH);
+      delay(2000);
+    }
+   
+   digitalWrite(0, LOW);
+    digitalWrite(2, LOW);
+}
+
 void saveParamCallback(){
   Serial.println("[CALLBACK] saveParamCallback fired");
   Serial.println("PARAM customfieldid = " + getParam("customfieldid"));
 }
-
+bool portaAberta=false;
+bool portaFechada=true;
 void mqttLoop(){
-  client.setServer(mqtt_server, 1883);
+
+
+       if (!client.connected()) {
+       conectaMQTT();
+       client.setCallback(recebePacote);
+    }
+  
+
  // client.setCallback(callback);
-  client.publish("statusTrancaTeste", "1");
+ if(portaAberta){
+  client.publish("statusPorta", "1");
+ }else{
+  client.publish("statusPorta", "0");
+ }
+  
+  client.subscribe("comandoPorta");
+ 
+  
 }
 
 void loop() {
   checkWiFi();
   mqttLoop();
+
 }
